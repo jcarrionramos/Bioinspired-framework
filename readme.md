@@ -1,1 +1,1 @@
-# Bio-Inspired Framework
+# BioInspired Framework
