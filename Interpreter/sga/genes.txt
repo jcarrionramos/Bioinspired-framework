@@ -1,0 +1,6 @@
+genes([	name := "PXYZ",
+		proteins := {"pXYZ"},
+		promoter := [function := "TRUE"],
+		prot_act_times := [times := {20.0, 20.0}, variabilities := {6.0, 6.0}],
+		prot_deg_times := [times := {10.0, 5.0}, variabilities := {2.0, 1.0}]
+]);

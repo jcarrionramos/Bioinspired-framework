@@ -1,0 +1,59 @@
+include gro
+set ( "dt", 0.1 );
+
+set ( "population_max",POP_MAX);
+t := 0;
+
+genes([	name := "F1",
+		proteins := {"NOK"},
+		promoter := [function := "OR", transcription_factors := {NOT_EXPRESSED},
+		noise := [toOff := 0.0, toOn := MUTATION , noise_time:= 200.0]],
+		prot_act_times := [times := {12.0}, variabilities := {3.0}],
+		prot_deg_times := [times := {1.0}, variabilities := {0.2}]
+	]);
+
+genes([	name := "F2",
+		proteins := {"OK"},
+		promoter := [function := "AND", transcription_factors := {EXPRESSED},
+		noise := [toOff := 0.0, toOn := MUTATION , noise_time:= 200.0]],
+		prot_act_times := [times := {12.0}, variabilities := {3.0}],
+		prot_deg_times := [times := {1.0}, variabilities := {0.2}]
+	]);
+
+genes([	name := "F3",
+		proteins := {"GFP"},
+		promoter := [function := "AND", transcription_factors := {"-NOK","OK"},
+		noise := [toOff := 0.0, toOn := 0.0, noise_time:= 200.0]],
+		prot_act_times := [times := {12.0}, variabilities := {3.0}],
+		prot_deg_times := [times := {1.0}, variabilities := {0.2}]
+]);
+//ADD_THE_OPERONS
+plasmids_genes([ 
+	pFitness := {"F1", "F2", "F3"},
+	//ADD_PLASMIDS
+]);
+
+//Actions
+//ADD_THE_CONJUGATIONS
+action({"GFP"}, "paint", {"1200","0","0","0"}); //GREEN
+action({"NOK","OK"}, "paint", {"0","0","1200","0"}); // YELLOW
+action({"NOK","-OK"}, "paint", {"0","1200","0","0"}); // RED
+action({"-NOK","-OK"}, "paint", {"0","0","0","0"}); // GREY
+
+//Programs
+program p() :=
+{
+	skip();
+};
+
+program main() := {
+	true:
+	{
+		//                   GREEN         YELLOW          RED            GREY
+		dump_multiple(fp,{"OK","-NOK"}, {"OK","NOK"}, {"-OK","NOK"}, {"-OK","-NOK"}, {});
+		t := t + dt;
+	}
+
+	//ADD_FITNESS_FUCTION
+
+};

@@ -1,0 +1,90 @@
+include gro
+set ("dt", 0.1);
+// Criterio de termino por generaciones --> ln_2(pob_ini) = n_generaciones
+set ("population_max", 10000);
+t := 0;
+// VARIABLES INDEPENDIENTES.
+genes([ name := "F1",
+    proteins := {"NOK"},
+    promoter := [function := "OR", transcription_factors := {"p3", "p4"},
+    noise := [toOff := 0.0, toOn := 0.01, noise_time:= 200.0]],
+    prot_act_times := [times := {12.0}, variabilities := {3.0}],
+    prot_deg_times := [times := {1.0}, variabilities := {0.2}]
+]);
+genes([ name := "F2",
+    proteins := {"OK"},
+    promoter := [function := "AND", transcription_factors := {"p1", "p2"},
+    noise := [toOff := 0.0, toOn := 0.01, noise_time:= 200.0]],
+    prot_act_times := [times := {12.0}, variabilities := {3.0}],
+    prot_deg_times := [times := {1.0}, variabilities := {0.2}]
+]);
+// VARIABLES DEPENDIENTES.
+genes([ name := "F3",
+    proteins := {"GFP"},
+    promoter := [function := "AND", transcription_factors := {"-NOK","OK"},
+    noise := [toOff := 0.0, toOn := 0.0, noise_time:= 200.0]],
+    prot_act_times := [times := {12.0}, variabilities := {3.0}],
+    prot_deg_times := [times := {1.0}, variabilities := {0.2}]
+]);
+genes([ name := "P1",
+    proteins := {"p1"},
+    promoter := [function := "TRUE"],
+    prot_act_times := [times := {20.0, 20.0}, variabilities := {6.0, 6.0}],
+    prot_deg_times := [times := {10.0, 5.0}, variabilities := {2.0, 1.0}]
+]);
+genes([ name := "P2",
+    proteins := {"p2"},
+    promoter := [function := "TRUE"],
+    prot_act_times := [times := {20.0, 20.0}, variabilities := {6.0, 6.0}],
+    prot_deg_times := [times := {10.0, 5.0}, variabilities := {2.0, 1.0}]
+]);
+genes([ name := "P3",
+    proteins := {"p3"},
+    promoter := [function := "TRUE"],
+    prot_act_times := [times := {20.0, 20.0}, variabilities := {6.0, 6.0}],
+    prot_deg_times := [times := {10.0, 5.0}, variabilities := {2.0, 1.0}]
+]);
+genes([ name := "P4",
+    proteins := {"p4"},
+    promoter := [function := "TRUE"],
+    prot_act_times := [times := {20.0, 20.0}, variabilities := {6.0, 6.0}],
+    prot_deg_times := [times := {10.0, 5.0}, variabilities := {2.0, 1.0}]
+]);
+plasmids_genes([ 
+    pFitness := {"F1", "F2", "F3"},
+    i1 := {"P1"},
+    i2 := {"P2"},
+    i3 := {"P3"},
+    i4 := {"P4"}
+]);
+// CROSSOVER
+action({}, "conjugate", {"i1","0.01"});
+action({}, "conjugate", {"i2","0.01"});
+action({}, "conjugate", {"i3","0.01"});
+action({}, "conjugate", {"i4","0.01"});
+// GFP = {"-NOK", "OK"}
+action({"GFP"}, "paint", {"1200","0","0","0"}); //GREEN
+action({"NOK","OK"}, "paint", {"0","0","1200","0"}); // YELLOW
+action({"NOK","-OK"}, "paint", {"0","1200","0","0"}); // RED
+action({"-NOK","-OK"}, "paint", {"0","0","0","0"}); // GREY
+fp := fopen ("/Users/jcarrion/Documents/codes/EvoGro/Simulations/SGA/N-bacterias/15000/Simu8.csv", "w");
+//Programs
+program p() := {
+    skip();
+};
+program main() := {
+    
+    true: {
+        //                     GREEN         YELLOW          RED            GREY      ALL
+        //dump_multiple(fp,{"OK","-NOK"}, {"OK","NOK"}, {"-OK","NOK"}, {"-OK","-NOK"}, {});
+        
+        //            time    GFP-OnMut    RealFitness                        ALL
+        dump_multiple( fp, {"OK","-NOK"}, {"p1", "p2", "-p3", "-p4"},  {});
+        t := t + dt;
+    }
+    c_ecolis(25, 0, 0, 100, {"pFitness","i1"}, program p());
+    c_ecolis(25, 0, 0, 100, {"pFitness","i2"}, program p());
+    c_ecolis(25, 0, 0, 100, {"pFitness","i3"}, program p());
+    c_ecolis(25, 0, 0, 100, {"pFitness","i4"}, program p());
+    c_ecolis(100, 0, 0, 100, {"pFitness"}, program p());
+};

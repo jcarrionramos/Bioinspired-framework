@@ -1,0 +1,89 @@
+include gro
+set ( "dt", 0.1 );
+set ( "population_max", 2000000 );
+
+t := 0;
+
+//Cellsignals settings
+set ("signals", 1.0); //0.0: off, 1.0: on
+set ("signals_draw", 1.0);
+grid("continuous", "gro_original", 10, 10, 8);
+
+s1 := s_signal([kdiff := 0.3, kdeg := 0.3]);  // AHL - Pink
+atc := s_signal([kdiff := 0.9, kdeg := 0.3]); // ATC - Blue
+											  // Purple = AHL + ATC
+											  
+//Init operon
+genes([	name := "Tet",
+		proteins := {"TetR"},
+		promoter := [function := "NOT", transcription_factors := {"atc"}],
+		prot_act_times := [times := {1.0}, variabilities := {0.0}],
+		prot_deg_times := [times := {0.1}, variabilities := {0.0}]
+]);
+
+genes([	name := "Switch",
+		proteins := {"LuxI", "GFP"},
+		promoter := [function := "NOT", transcription_factors := {"TetR"}],
+		prot_act_times := [times := {30.0, 15.0}, variabilities := {0.0, 0.0}],
+		prot_deg_times := [times := {0.1, 0.1}, variabilities := {0.0, 0.0}]
+]);
+
+// Circuit
+genes([	name := "LacIm",
+		proteins := {"LacIm"},
+		promoter := [function := "YES", transcription_factors := {"high"}],
+		prot_act_times := [times := {1.0}, variabilities := {0.0}],
+		prot_deg_times := [times := {0.1}, variabilities := {0.0}]
+]);
+
+genes([	name := "cI",
+		proteins := {"cI"},
+		promoter := [function := "YES", transcription_factors := {"low"}],
+		prot_act_times := [times := {5.0}, variabilities := {0.0}],
+		prot_deg_times := [times := {0.1}, variabilities := {0.0}]
+]);
+
+genes([	name := "Band",
+		proteins := {"LuxI", "RFP"},
+		promoter := [function := "AND", transcription_factors := {"LacIm", "cI"}],
+		prot_act_times := [times := {30.0, 15.0}, variabilities := {0.0, 0.0}],
+		prot_deg_times := [times := {0.1, 0.1}, variabilities := {0.0, 0.0}]
+]);
+
+plasmids_genes([ pS := {"Tet","Switch"},
+                 pB := {"LacIm","LacI","Band", "cI"}
+ ]);
+
+// Actions
+action({"-GFP","-RFP"},"paint",{"0","0","0","0"}); // Grey
+action({"-GFP","RFP"},"paint",{"0","200","0","0"}); // Red
+action({"GFP","-RFP"},"paint",{"200","0","0","0"}); // Green
+action({"GFP","RFP"},"paint",{"200","0","0","0"}); //  Green
+
+action({"LuxI"},"s_emit_signal",{tostring(s1),"2.0", "exact"});
+
+action({},"set_growth_rate",{"0.012"});
+
+action({},"s_get_QS",{tostring(s1),">","0.0001","low"}); // CI
+action({},"s_get_QS",{tostring(s1),"<","0.9","high"}); // LACImod
+action({},"s_get_QS",{tostring(atc),">","0.001","atc"});
+
+//Programs
+program p() := {
+	skip();
+};
+
+program main() := {
+
+	true: {
+		t := t+dt;
+	}
+
+	t < 60 : {
+		s_set_signal(atc, 15000, 0, 0);
+	}
+	c_ecolis(5000, 0, 0, 200, {"pB"}, program p());
+
+	//        N , x, y, rad 
+	c_ecolis(300, 0, 0, 200, {"pS", "pB"}, program p());
+};
