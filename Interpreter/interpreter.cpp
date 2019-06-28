@@ -3,7 +3,7 @@
 #include <fstream>
 using namespace std;
 
-typedef vector<pair<bool,int>> vecbi;
+typedef vector<pair<int,int>> vecii;
 
 void FindAndReplace(string &strTemp, string f, string r){
     for (size_t p = strTemp.find( f ); p != string::npos; p = strTemp.find( f, p ) ){
@@ -11,10 +11,12 @@ void FindAndReplace(string &strTemp, string f, string r){
     }
 }
 
-string NotExpressed(vecbi p){
+string NotExpressed(vecii p){
     string expression;
     for (int i = 0; i < p.size(); i++){
-        if (!p[i].first){
+        if(p[i].first == 2) continue;
+
+        if (p[i].first == 0){
             expression.push_back('"');
             expression.push_back('p');
             expression.push_back((i+1)+'0');
@@ -26,10 +28,12 @@ string NotExpressed(vecbi p){
     return expression;
 }
 
-string Expressed(vecbi p){
+string Expressed(vecii p){
     string expression;
     for (int i = 0; i < p.size(); i++){
-        if (p[i].first){
+        if(p[i].first == 2) continue;
+
+        if (p[i].first == 1){
             expression.push_back('"');
             expression.push_back('p');
             expression.push_back((i+1)+'0');
@@ -41,7 +45,7 @@ string Expressed(vecbi p){
     return expression;
 }
 
-string Operons(vecbi &p){
+string Operons(vecii &p){
     ifstream filein("./sga/genes.txt");
     string operons;
     string strTemp;
@@ -54,13 +58,13 @@ string Operons(vecbi &p){
         }
         operons += "\n";
         filein.clear();
-        filein.seekg(0, filein.beg);    
+        filein.seekg(0, filein.beg);
     }
 
     return operons;
 }
 
-string Plasmids(vecbi &p){
+string Plasmids(vecii &p){
     ifstream filein("./sga/plasmids.txt");
     string plasmids;
     string strTemp;
@@ -72,13 +76,13 @@ string Plasmids(vecbi &p){
         }
         filein.clear();
         filein.seekg(0, filein.beg);
-        plasmids += ",\n    "; 
+        plasmids += ",\n    ";
     }
     plasmids.resize(plasmids.size()-6);
     return plasmids;
 }
 
-string Conjugations(vecbi &p, string c){
+string Conjugations(vecii &p, string c){
     ifstream filein("./sga/conjugations.txt");
     string conjugation;
     string strTemp;
@@ -91,14 +95,14 @@ string Conjugations(vecbi &p, string c){
             conjugation += strTemp;
         }
         filein.clear();
-        filein.seekg(0, filein.beg);    
+        filein.seekg(0, filein.beg);
     }
 
     return conjugation;
 }
 
 
-string AmountBacteria(vecbi &p){
+string AmountBacteria(vecii &p){
     ifstream filein("./sga/bacteria.txt");
     string bacteria;
     string strTemp;
@@ -114,7 +118,7 @@ string AmountBacteria(vecbi &p){
         amount += p[i].second;
         filein.clear();
         filein.seekg(0, filein.beg);
-        bacteria += "    "; 
+        bacteria += "    ";
     }
 
     string total = "\n    c_ecolis(XYZ, 0, 0, 100, {\"pFitness\"}, program p());";
@@ -126,7 +130,7 @@ string AmountBacteria(vecbi &p){
     return bacteria;
 }
 
-void MakeTemplate(ofstream &fout, vecbi &p, string m, string c, string pop_max){
+void MakeTemplate(ofstream &fout, vecii &p, string m, string c, string pop_max){
     ifstream filein("./sga/template.txt");
 
     string noExpression = NotExpressed(p);
@@ -154,23 +158,26 @@ int main() {
 
     /* READING PARAMETERS */
     int size;
-    cout << "SIMPLE GENETIC ALGORITHM GENERATOR\n\nPlease enter the number of proteins needed for the simulation: "; 
+    cout << "SIMPLE GENETIC ALGORITHM GENERATOR\n\nPlease enter the number of proteins needed for the simulation: ";
     cin >> size;
 
     cout << "\nPlease say for each protein, if it has to be expressed (Y/y/1) or not (N/n/0) and the initial amount\n";
-    vecbi proteins(size);
+    vecii proteins(size);
     string answer;
     for (int i = 0; i < size; i++) {
         cout << "Protein " << i + 1 << ": ";
         cin >> answer;
         cin >> proteins[i].second;
-        proteins[i].first = (answer == "Y" || answer == "y" || answer == "1") ? true : false;
+        
+        if (answer == "Y" || answer == "y" || answer == "1") proteins[i].first = 1;
+        else if (answer == "N" || answer == "n" || answer == "0") proteins[i].first = 0;
+        else proteins[i].first = 2;
     }
 
     string mutation, crossover;
     cout << "\nNow please type the percentage Now please type the percentage of Mutation and Crossover respectively:\n";
     cout << "Mutation: "; cin >> mutation;
-    cout << "Crossover: "; cin >> crossover; 
+    cout << "Crossover: "; cin >> crossover;
 
     // mutation /= 100;
     // crossover /= 100;
@@ -183,7 +190,7 @@ int main() {
     /* STAR MAKING THE gro FILE */
     ofstream output;
     output.open ("output.gro");
-    
+
     MakeTemplate(output, proteins, mutation, crossover, POP_MAX);
 
     /* GRO FILE FINISHED */
